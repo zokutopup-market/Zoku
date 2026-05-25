@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Hubungi Kami | Zoku TopUp</title>
+  <title>Zoku TopUp | kontak</title>
   <link rel="icon" href="zoku rev.png" type="image/png">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
   <style>
@@ -26,12 +26,55 @@
     .contact-container {
       max-width: 1280px;
       margin: 0 auto;
+      position: relative;
+    }
+
+    /* Tombol Back - Pojok Kiri Atas */
+    .back-button-wrapper {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+
+    .btn-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(6px);
+      padding: 0.6rem 1.2rem;
+      border-radius: 60px;
+      font-weight: 500;
+      text-decoration: none;
+      color: #1e3a5f;
+      transition: all 0.2s ease;
+      border: 1px solid #cddfeb;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+      font-size: 0.9rem;
+    }
+
+    .btn-back i {
+      font-size: 1rem;
+      transition: transform 0.2s;
+    }
+
+    .btn-back:hover {
+      background: white;
+      border-color: #2c7da0;
+      transform: translateX(-3px);
+      box-shadow: 0 8px 18px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-back:hover i {
+      transform: translateX(-3px);
     }
 
     /* Header section */
     .contact-header {
       text-align: center;
       margin-bottom: 3rem;
+      margin-top: 0.5rem;
     }
 
     .contact-header h1 {
@@ -373,6 +416,24 @@
       body {
         padding: 1.5rem 1rem;
       }
+      .back-button-wrapper {
+        position: relative;
+        margin-bottom: 1rem;
+        display: inline-block;
+      }
+      .contact-container {
+        display: flex;
+        flex-direction: column;
+      }
+      /* agar back tidak absolute di mobile, biar rapi */
+      .back-button-wrapper {
+        position: static;
+        margin-bottom: 1rem;
+      }
+      .btn-back {
+        display: inline-flex;
+        width: auto;
+      }
     }
 
     @media (max-width: 480px) {
@@ -400,10 +461,16 @@
 <body>
 <div class="contact-container">
   
+  <!-- Tombol Back - Kiri Atas, dapat kembali ke halaman sebelumnya -->
+  <div class="back-button-wrapper">
+    <a href="#" class="btn-back" id="backButton">
+      <i class="fas fa-arrow-left"></i> Kembali
+    </a>
+  </div>
+
   <div class="contact-header">
     <h1><i class="fas fa-address-card"></i> Hubungi Kami</h1>
     <div class="subhead">Layanan Zoku TopUp — tempat saran, pertanyaan dan dukungan</div>
-    <!-- <p style="margin-top: 1.2rem; color: #2c5a74;">Setiap pertanyaan, saran, atau dukungan tersedia tanpa perlu mengisi data.</p> -->
   </div>
 
   <div class="contact-grid">
@@ -432,13 +499,6 @@
             <a>zokutopup@gmail.com</a>
           </div>
         </li>
-        <!-- <li>
-          <div class="contact-icon"><i class="fas fa-clock"></i></div>
-          <div class="contact-detail">
-            <strong>Dukungan Prioritas</strong>
-            <span></span>
-          </div>
-        </li> -->
       </ul>
       <div class="action-buttons">
         <a href="tel:+6282164960213" class="btn-contact"><i class="fas fa-phone"></i> Panggil Sekarang</a>
@@ -448,14 +508,14 @@
       <hr />
       <div style="font-size: 0.85rem; color: #3a6e8c; margin-top: 1rem; display: flex; gap: 1rem; flex-wrap: wrap;">
         <span><i class="fas fa-fax"></i> Fax: +62 821 6496 0213</span>
-        <span><i class="fas fa-globe"></i> www.</span>
+        <span><i class="fas fa-globe"></i> www.zokutopup.com</span>
       </div>
     </div>
 
     <!-- KANAN: Peta interaktif + alamat -->
     <div class="map-card">
       <div class="map-container">
-        <!-- Google Maps Embed (Lokasi contoh: Sudirman, Jakarta) -->
+        <!-- Google Maps Embed (Lokasi contoh: Zoku TopUp, Asahan) -->
         <iframe 
           class="map-embed"
           src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d33518.06775892592!2d99.83493223293983!3d2.8305519798485617!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3032590063e15f2d%3A0xd47150cfdd2414d8!2sZoku%20TopUp!5e1!3m2!1sid!2sid!4v1779341513565!5m2!1sid!2sid"
@@ -463,8 +523,8 @@
           loading="lazy" 
           referrerpolicy="no-referrer-when-downgrade">
         </iframe>
-        <!-- Gambar statis cadangan (jika embed bermasalah, bisa ditampilkan dengan CSS) -->
-        <img class="static-map" src="https://placehold.co/800x280/e2e8f0/2c5a74?text=Peta+Lokasi+-+Jl.+Sudirman+Jakarta" alt="Peta statis lokasi kantor" style="display: none;" />
+        <!-- Gambar statis cadangan (jika embed bermasalah) -->
+        <img class="static-map" src="https://placehold.co/800x280/e2e8f0/2c5a74?text=Peta+Lokasi+-+Zoku+TopUp+Asahan" alt="Peta statis lokasi kantor" style="display: none;" />
       </div>
       <div class="address-detail">
         <h3><i class="fas fa-location-dot"></i> Alamat Lengkap</h3>
@@ -478,9 +538,6 @@
           <a href="https://maps.app.goo.gl/feMT66f4hzTUJzRy9" target="_blank">
             <i class="fab fa-google"></i> Buka di Google Maps
           </a>
-          <!-- <a href="https://www.google.com/maps/RRGW+3R4 Zoku TopUp, Perbangunan, Kec. Sei Kepayang, Kabupaten Asahan, Sumatera Utara 21381" target="_blank">
-            <i class="fas fa-directions"></i> Petunjuk Arah
-          </a> -->
         </div>
       </div>
     </div>
@@ -506,17 +563,16 @@
       <p style="margin-bottom: 0.8rem; color: #2b5f7a;">Ikuti kami untuk update, promo, dan bantuan cepat</p>
       <div class="social-icons">
         <a href="https://www.instagram.com/zokutopup?igsh=Nzc0N2RsbXdvcmFl" class="social-link" target="_blank"><i class="fab fa-instagram"></i> Instagram</a>
-        <a href="https://www.tiktok.com/@zokutopup?_r=1&_t=ZS-96XzngwenpM" class="social-link" target="_blank"><i class="fa-brands fa-tiktok"></i> Tiktok</a>
-        <a href="t.me/TopUpZoku" class="social-link" target="_blank"><i class="fa-brands fa-telegram"></i> Telegram</a>
+        <a href="https://www.tiktok.com/@zokutopup?_r=1&_t=ZS-96XzngwenpM" class="social-link" target="_blank"><i class="fab fa-tiktok"></i> Tiktok</a>
+        <a href="https://t.me/TopUpZoku" class="social-link" target="_blank"><i class="fab fa-telegram"></i> Telegram</a>
         <a href="error.html" class="social-link"><i class="fab fa-facebook-f"></i> Facebook</a>
         <a href="error.html" class="social-link"><i class="fab fa-youtube"></i> YouTube</a>
       </div>
 
       <h3 style="margin-bottom: 0.8rem; margin-top: 1em;"><i class="fas fa-share-alt"></i> Saluran & Channel</h3>
-      <!-- <p style="margin-bottom: 0.8rem; margin-top :1.8em; color: #2b5f7a;">Komunitas & Group</p> -->
       <div class="social-icons">
-        <a href="https://whatsapp.com/channel/0029Vb3UeMH9sBIFsx6PxK0H" class="social-link" target="_blank" title="saluran WhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp</a>
-        <a href="https://t.me/Zokutopup" class="social-link" target="_blank" title="Channel Telegram"><i class="fab fa-telegram"></i> Telegram</a>
+        <a href="https://whatsapp.com/channel/0029Vb3UeMH9sBIFsx6PxK0H" class="social-link" target="_blank" title="saluran WhatsApp"><i class="fab fa-whatsapp"></i> WhatsApp Channel</a>
+        <a href="https://t.me/Zokutopup" class="social-link" target="_blank" title="Channel Telegram"><i class="fab fa-telegram"></i> Telegram Channel</a>
         </div>
       <div style="margin-top: 1.6rem;">
         <span style="background: #eef2f5; border-radius: 30px; padding: 0.3rem 1rem; font-size: 0.8rem;">
@@ -529,18 +585,18 @@
   <!-- Catatan tanpa form -->
   <div class="note-section">
     <p>
-      <i class="fas fa-check-circle"></i> kompain dan saran — hubungi kami langsung via kontak di atas
+      <i class="fas fa-check-circle"></i> Keluhan, saran, dan pertanyaan — hubungi kami langsung via kontak di atas
       <i class="fas fa-arrow-right"></i>
       <i class="fas fa-reply-all"></i> Respon cepat <strong> ≤ 2 jam</strong> pada jam operasional
     </p>
     <p style="margin-top: 8px; font-size: 0.85rem;">
-      <i class="fas fa-lock"></i> Privasi Anda tetap terjaga — pihak zoku tidak mengumpulkan data melalui halaman ini.
+      <i class="fas fa-lock"></i> Privasi Anda tetap terjaga — pihak Zoku tidak mengumpulkan data melalui halaman ini.
     </p>
   </div>
 
   <!-- Footer -->
   <div style="margin-top: 2.5rem; text-align: center; font-size: 0.8rem; color: #5982a0; border-top: 1px solid #cddeec; padding-top: 1.8rem;">
-    <span>© 2024 Zoku Topup • made with Zoku.</span>
+    <span>© 2025 Zoku Topup • made with Zoku.</span>
     <div style="margin-top: 0.6rem;">
       <a href="#" style="color: #2b6c8f; text-decoration: none; margin: 0 10px;">Kebijakan Privasi</a> 
       <a href="#" style="color: #2b6c8f; text-decoration: none; margin: 0 10px;">Syarat & Ketentuan</a>
@@ -548,9 +604,24 @@
   </div>
 </div>
 
-<!-- Script kecil untuk fallback jika embed gagal (opsional) -->
+<!-- Script untuk fungsi tombol kembali dan fallback peta -->
 <script>
-  // Jika jika iframe gagal load karena alasan jaringan, tampilkan gambar statis
+  // Tombol Kembali: mendeteksi apakah ada halaman sebelumnya (history)
+  const backBtn = document.getElementById('backButton');
+  if (backBtn) {
+    backBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      // Jika terdapat referrer atau panjang history > 1, kembali
+      if (document.referrer && window.history.length > 1) {
+        window.history.back();
+      } else {
+        // Fallback jika tidak ada riwayat: bisa arahkan ke home atau index
+        window.location.href = 'index.html'; // Ganti dengan halaman utama jika diperlukan
+      }
+    });
+  }
+
+  // Fallback jika iframe gagal load karena alasan jaringan, tampilkan gambar statis
   const iframe = document.querySelector('.map-embed');
   const staticImg = document.querySelector('.static-map');
   if (iframe && staticImg) {
@@ -558,7 +629,12 @@
       iframe.style.display = 'none';
       staticImg.style.display = 'block';
     });
-    // Jika sudah sukses, tidak perlu fallback
+    // Optional: jika iframe sukses, tidak perlu fallback
+    iframe.addEventListener('load', function() {
+      // iframe berhasil dimuat, pastikan static tidak ditampilkan
+      staticImg.style.display = 'none';
+      iframe.style.display = 'block';
+    });
   }
 </script>
 </body>
