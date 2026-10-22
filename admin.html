@@ -1423,7 +1423,7 @@ document.getElementById('waCustomerBtn').addEventListener('click', function () {
         return;
     }
     const shortId = formatShortId(selectedOrder.id);
-    const msg = `Halo ${selectedOrder.customerName}, terkait pesanan Anda ${shortId} (${selectedOrder.product}) sedang kami proses. Mohon ditunggu ya 🙏`;
+    const msg = `Halo ${selectedOrder.customerName}, terkait pesanan Anda ${shortId} (${selectedOrder.product}) sedang kami proses. Mohon ditunggu ya!`;
     window.open(`https://wa.me/${formatPhone(phone)}?text=${encodeURIComponent(msg)}`, '_blank');
 });
 
