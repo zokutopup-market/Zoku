@@ -752,7 +752,11 @@
 
             saveOrderToStorage(orderData);
 
+           // Format ID pendek (6 digit terakhir) — SAMA dengan yang tampil di admin
+            const shortId = String(orderData.id).slice(-6);
+            
             const message = `*PESANAN LAMINASI ZOKU*%0A%0A` +
+                `*ID Pesanan: #${shortId}*%0A%0A` +
                 `*Data Pelanggan*%0A` +
                 `Nama: ${orderData.customerName}%0A` +
                 `WhatsApp: ${orderData.whatsapp}%0A` +
@@ -764,7 +768,7 @@
                 `Ukuran: ${orderData.size}%0A` +
                 `Catatan: ${orderData.notes}%0A` +
                 `Total: Rp ${orderData.total}%0A%0A` +
-                `Pesanan #${orderData.id}%0A` +
+                `Mohon konfirmasi pesanan *#${shortId}* ya!%0A` +
                 `_Siap dikerjakan!_`;
 
             const whatsappUrl = `https://wa.me/6282164960213?text=${message}`;
