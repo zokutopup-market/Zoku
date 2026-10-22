@@ -779,8 +779,11 @@
             // 🔥 SIMPAN KE LOCALSTORAGE (INILAH YANG BIKIN TERHUBUNG!)
             saveOrderToStorage(orderData);
 
-            // Kirim ke WhatsApp
+            // Format ID pendek (6 digit terakhir) — SAMA dengan yang tampil di admin
+            const shortId = String(orderData.id).slice(-6);
+            
             const message = `PESANAN PRINT ZOKU\n\n` +
+                `*ID Pesanan: #${shortId}*\n\n` +
                 `Nama: ${orderData.customerName}\n` +
                 `WhatsApp: ${orderData.whatsapp}\n\n` +
                 `Alamat Lengkap: ${orderData.address}\n\n` +
@@ -789,8 +792,7 @@
                 `Jumlah: ${orderData.quantity}\n` +
                 `Keterangan: ${orderData.notes || '-'}\n` +
                 `Total: ${orderData.total}\n\n` +
-                `Pesanan #${orderData.id}\n` +
-                `Mohon konfirmasi ya!`;
+                `Mohon konfirmasi pesanan *#${shortId}* ya!`;
 
             const whatsappUrl = `https://wa.me/6282164960213?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
