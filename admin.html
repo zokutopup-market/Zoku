@@ -1047,506 +1047,519 @@
     </div>
 
     <script>
-        // ========================================
-        // KONFIGURASI ADMIN
-        // ========================================
-        const ADMIN_CREDENTIALS = {
-            username: 'adminZoku',
-            password: 'zoku By Wardz 20241'
-        };
+       // ========================================
+// KONFIGURASI ADMIN
+// ========================================
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'zoku2024'
+};
 
-        // Storage keys
-        const STORAGE_KEYS = {
-            print: 'printshop_orders',
-            laminating: 'laminasi_orders',
-            session: 'zoku_admin_session'
-        };
+// Storage keys
+const STORAGE_KEYS = {
+    print: 'printshop_orders',
+    laminating: 'laminasi_orders',
+    session: 'zoku_admin_session'
+};
 
-        // State
-        let allOrders = [];
-        let currentTab = 'all';
-        let searchQuery = '';
-        let selectedOrder = null;
-        let selectedOrderSource = null;
+// ========================================
+// HELPER: FORMAT ID PESANAN (KONSISTEN)
+// ========================================
+// ID pendek yang tampil di WA + tabel admin + detail
+function formatShortId(id) {
+    return '#' + String(id).slice(-6);
+}
 
-        // ========================================
-        // LOGIN SYSTEM
-        // ========================================
-        const loginScreen = document.getElementById('loginScreen');
-        const adminDashboard = document.getElementById('adminDashboard');
-        const loginForm = document.getElementById('loginForm');
-        const loginError = document.getElementById('loginError');
+// ID lengkap untuk referensi / debug
+function formatFullId(id) {
+    return String(id);
+}
 
-        // Cek session saat halaman dimuat
-        function checkSession() {
-            const session = localStorage.getItem(STORAGE_KEYS.session);
-            if (session) {
-                try {
-                    const data = JSON.parse(session);
-                    // Session berlaku 24 jam
-                    if (Date.now() - data.loginTime < 24 * 60 * 60 * 1000) {
-                        showDashboard(data.username);
-                        return;
-                    }
-                } catch (e) {
-                    localStorage.removeItem(STORAGE_KEYS.session);
-                }
-            }
-            // Tampilkan login
-            loginScreen.classList.remove('hidden');
-            adminDashboard.classList.remove('show');
-        }
+// ========================================
+// STATE
+// ========================================
+let allOrders = [];
+let currentTab = 'all';
+let searchQuery = '';
+let selectedOrder = null;
+let selectedOrderSource = null;
 
-        // Handle login submit
-        loginForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value;
+// ========================================
+// LOGIN SYSTEM
+// ========================================
+const loginScreen = document.getElementById('loginScreen');
+const adminDashboard = document.getElementById('adminDashboard');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
 
-            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
-                // Simpan session
-                localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({
-                    username: username,
-                    loginTime: Date.now()
-                }));
-                
-                loginError.classList.remove('show');
-                showDashboard(username);
-                showToast('Login berhasil! Selamat datang, ' + username, 'success');
-            } else {
-                loginError.classList.add('show');
-                document.getElementById('password').value = '';
-                document.getElementById('password').focus();
-            }
-        });
-
-        // Tampilkan dashboard
-        function showDashboard(username) {
-            loginScreen.classList.add('hidden');
-            adminDashboard.classList.add('show');
-            document.getElementById('adminName').textContent = username;
-            
-            // Load data
-            loadAllOrders();
-            updateStats();
-            renderOrders();
-        }
-
-        // Logout
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            if (confirm('Yakin ingin logout?')) {
-                localStorage.removeItem(STORAGE_KEYS.session);
-                adminDashboard.classList.remove('show');
-                loginScreen.classList.remove('hidden');
-                loginForm.reset();
-                loginError.classList.remove('show');
-                showToast('Logout berhasil', 'success');
-            }
-        });
-
-        // ========================================
-        // LOAD DATA
-        // ========================================
-        function loadAllOrders() {
-            allOrders = [];
-
-            // Load pesanan Print
-            try {
-                const printOrders = JSON.parse(localStorage.getItem(STORAGE_KEYS.print)) || [];
-                printOrders.forEach(order => {
-                    allOrders.push({
-                        ...order,
-                        source: 'print',
-                        type: 'Print'
-                    });
-                });
-            } catch (e) {
-                console.error('Error loading print orders:', e);
-            }
-
-            // Load pesanan Laminating
-            try {
-                const laminatingOrders = JSON.parse(localStorage.getItem(STORAGE_KEYS.laminating)) || [];
-                laminatingOrders.forEach(order => {
-                    allOrders.push({
-                        ...order,
-                        source: 'laminating',
-                        type: 'Laminating'
-                    });
-                });
-            } catch (e) {
-                console.error('Error loading laminating orders:', e);
-            }
-
-            // Sort berdasarkan timestamp terbaru
-            allOrders.sort((a, b) => {
-                const dateA = new Date(a.timestamp || 0);
-                const dateB = new Date(b.timestamp || 0);
-                return dateB - dateA;
-            });
-        }
-
-        // ========================================
-        // UPDATE STATS
-        // ========================================
-        function updateStats() {
-            const total = allOrders.length;
-            const newOrders = allOrders.filter(o => o.status === 'new' || !o.status).length;
-            const doneOrders = allOrders.filter(o => o.status === 'done').length;
-            
-            // Hitung total pendapatan (hanya yang selesai)
-            let revenue = 0;
-            allOrders.forEach(o => {
-                if (o.status === 'done') {
-                    revenue += parseNumber(o.total);
-                }
-            });
-
-            document.getElementById('totalOrders').textContent = total;
-            document.getElementById('newOrders').textContent = newOrders;
-            document.getElementById('doneOrders').textContent = doneOrders;
-            document.getElementById('totalRevenue').textContent = 'Rp ' + formatRupiah(revenue);
-
-            // Badge counts
-            document.getElementById('badgeAll').textContent = total;
-            document.getElementById('badgePrint').textContent = allOrders.filter(o => o.source === 'print').length;
-            document.getElementById('badgeLaminating').textContent = allOrders.filter(o => o.source === 'laminating').length;
-        }
-
-        // ========================================
-        // RENDER ORDERS TABLE
-        // ========================================
-        function renderOrders() {
-            const tbody = document.getElementById('ordersTableBody');
-            const emptyState = document.getElementById('emptyState');
-
-            // Filter berdasarkan tab
-            let filtered = allOrders;
-            if (currentTab !== 'all') {
-                filtered = filtered.filter(o => o.source === currentTab);
-            }
-
-            // Filter berdasarkan search
-            if (searchQuery) {
-                const q = searchQuery.toLowerCase();
-                filtered = filtered.filter(o => 
-                    (o.customerName || '').toLowerCase().includes(q) ||
-                    String(o.id).includes(q) ||
-                    (o.product || '').toLowerCase().includes(q)
-                );
-            }
-
-            if (filtered.length === 0) {
-                tbody.innerHTML = '';
-                emptyState.style.display = 'block';
+function checkSession() {
+    const session = localStorage.getItem(STORAGE_KEYS.session);
+    if (session) {
+        try {
+            const data = JSON.parse(session);
+            if (Date.now() - data.loginTime < 24 * 60 * 60 * 1000) {
+                showDashboard(data.username);
                 return;
             }
-
-            emptyState.style.display = 'none';
-
-            tbody.innerHTML = filtered.map(order => {
-                const status = order.status || 'new';
-                const statusConfig = {
-                    new: { label: 'Baru', class: 'new', icon: 'fa-circle' },
-                    process: { label: 'Diproses', class: 'process', icon: 'fa-clock' },
-                    done: { label: 'Selesai', class: 'done', icon: 'fa-check' },
-                    cancel: { label: 'Dibatalkan', class: 'cancel', icon: 'fa-times' }
-                };
-                const sc = statusConfig[status] || statusConfig.new;
-                const typeClass = order.source === 'laminating' ? 'laminating' : '';
-
-                return `
-                    <tr>
-                        <td><span class="order-id">#${String(order.id).slice(-6)}</span></td>
-                        <td>
-                            <div class="customer-name">${escapeHtml(order.customerName || '-')}</div>
-                            <div class="customer-phone">${escapeHtml(order.whatsapp || '-')}</div>
-                        </td>
-                        <td>
-                            <span class="product-tag ${typeClass}">${escapeHtml(order.product || '-')}</span>
-                        </td>
-                        <td>${order.quantity || 1}</td>
-                        <td class="price">Rp ${formatRupiah(parseNumber(order.total))}</td>
-                        <td>
-                            <span class="status-badge ${sc.class}">
-                                <i class="fas ${sc.icon}"></i> ${sc.label}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="action-btn view" onclick="openDetail('${order.id}', '${order.source}')" title="Lihat Detail">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                                <button class="action-btn wa" onclick="chatCustomer('${escapeHtml(order.whatsapp || '')}')" title="Chat WhatsApp">
-                                    <i class="fab fa-whatsapp"></i>
-                                </button>
-                                <button class="action-btn delete" onclick="deleteOrder('${order.id}', '${order.source}')" title="Hapus">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+        } catch (e) {
+            localStorage.removeItem(STORAGE_KEYS.session);
         }
+    }
+    loginScreen.classList.remove('hidden');
+    adminDashboard.classList.remove('show');
+}
 
-        // ========================================
-        // TAB SWITCHING
-        // ========================================
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                this.classList.add('active');
-                currentTab = this.dataset.tab;
-                renderOrders();
+loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({
+            username: username,
+            loginTime: Date.now()
+        }));
+
+        loginError.classList.remove('show');
+        showDashboard(username);
+        showToast('Login berhasil! Selamat datang, ' + username, 'success');
+    } else {
+        loginError.classList.add('show');
+        document.getElementById('password').value = '';
+        document.getElementById('password').focus();
+    }
+});
+
+function showDashboard(username) {
+    loginScreen.classList.add('hidden');
+    adminDashboard.classList.add('show');
+    document.getElementById('adminName').textContent = username;
+
+    loadAllOrders();
+    updateStats();
+    renderOrders();
+}
+
+document.getElementById('logoutBtn').addEventListener('click', function () {
+    if (confirm('Yakin ingin logout?')) {
+        localStorage.removeItem(STORAGE_KEYS.session);
+        adminDashboard.classList.remove('show');
+        loginScreen.classList.remove('hidden');
+        loginForm.reset();
+        loginError.classList.remove('show');
+        showToast('Logout berhasil', 'success');
+    }
+});
+
+// ========================================
+// LOAD DATA
+// ========================================
+function loadAllOrders() {
+    allOrders = [];
+
+    try {
+        const printOrders = JSON.parse(localStorage.getItem(STORAGE_KEYS.print)) || [];
+        printOrders.forEach(order => {
+            allOrders.push({
+                ...order,
+                source: 'print',
+                type: 'Print'
             });
         });
+    } catch (e) {
+        console.error('Error loading print orders:', e);
+    }
 
-        // ========================================
-        // SEARCH
-        // ========================================
-        document.getElementById('searchInput').addEventListener('input', function(e) {
-            searchQuery = e.target.value.trim();
-            renderOrders();
+    try {
+        const laminatingOrders = JSON.parse(localStorage.getItem(STORAGE_KEYS.laminating)) || [];
+        laminatingOrders.forEach(order => {
+            allOrders.push({
+                ...order,
+                source: 'laminating',
+                type: 'Laminating'
+            });
         });
+    } catch (e) {
+        console.error('Error loading laminating orders:', e);
+    }
 
-        // ========================================
-        // DETAIL MODAL
-        // ========================================
-        const detailModal = document.getElementById('detailModal');
-        const modalBody = document.getElementById('modalBody');
-        const statusSelect = document.getElementById('statusSelect');
+    allOrders.sort((a, b) => {
+        const dateA = new Date(a.timestamp || 0);
+        const dateB = new Date(b.timestamp || 0);
+        return dateB - dateA;
+    });
+}
 
-        function openDetail(orderId, source) {
-            const order = allOrders.find(o => String(o.id) === String(orderId) && o.source === source);
-            if (!order) return;
+// ========================================
+// UPDATE STATS
+// ========================================
+function updateStats() {
+    const total = allOrders.length;
+    const newOrders = allOrders.filter(o => o.status === 'new' || !o.status).length;
+    const doneOrders = allOrders.filter(o => o.status === 'done').length;
 
-            selectedOrder = order;
-            selectedOrderSource = source;
-            const status = order.status || 'new';
-
-            modalBody.innerHTML = `
-                <div class="detail-row">
-                    <div class="detail-label">ID Pesanan</div>
-                    <div class="detail-value"><span class="order-id">#${String(order.id).slice(-6)}</span></div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Jenis Layanan</div>
-                    <div class="detail-value">${order.type}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Nama Pelanggan</div>
-                    <div class="detail-value">${escapeHtml(order.customerName || '-')}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">No. WhatsApp</div>
-                    <div class="detail-value">${escapeHtml(order.whatsapp || '-')}</div>
-                </div>
-                ${order.address ? `
-                <div class="detail-row">
-                    <div class="detail-label">Alamat</div>
-                    <div class="detail-value">${escapeHtml(order.address)}</div>
-                </div>` : ''}
-                <div class="detail-row">
-                    <div class="detail-label">Produk</div>
-                    <div class="detail-value">${escapeHtml(order.product || '-')}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Spesifikasi</div>
-                    <div class="detail-value">${escapeHtml(order.desc || '-')}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Jumlah</div>
-                    <div class="detail-value">${order.quantity || 1}</div>
-                </div>
-                ${order.size ? `
-                <div class="detail-row">
-                    <div class="detail-label">Ukuran</div>
-                    <div class="detail-value">${escapeHtml(order.size)}</div>
-                </div>` : ''}
-                <div class="detail-row">
-                    <div class="detail-label">Catatan</div>
-                    <div class="detail-value">${escapeHtml(order.notes || '-')}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Total</div>
-                    <div class="detail-value price">Rp ${formatRupiah(parseNumber(order.total))}</div>
-                </div>
-                <div class="detail-row">
-                    <div class="detail-label">Waktu Pesan</div>
-                    <div class="detail-value">${formatDate(order.timestamp)}</div>
-                </div>
-            `;
-
-            statusSelect.value = status;
-            detailModal.classList.add('show');
+    let revenue = 0;
+    allOrders.forEach(o => {
+        if (o.status === 'done') {
+            revenue += parseNumber(o.total);
         }
+    });
 
-        // Close modal
-        document.getElementById('closeModal').addEventListener('click', () => {
-            detailModal.classList.remove('show');
+    document.getElementById('totalOrders').textContent = total;
+    document.getElementById('newOrders').textContent = newOrders;
+    document.getElementById('doneOrders').textContent = doneOrders;
+    document.getElementById('totalRevenue').textContent = 'Rp ' + formatRupiah(revenue);
+
+    document.getElementById('badgeAll').textContent = total;
+    document.getElementById('badgePrint').textContent = allOrders.filter(o => o.source === 'print').length;
+    document.getElementById('badgeLaminating').textContent = allOrders.filter(o => o.source === 'laminating').length;
+}
+
+// ========================================
+// RENDER ORDERS TABLE
+// ========================================
+function renderOrders() {
+    const tbody = document.getElementById('ordersTableBody');
+    const emptyState = document.getElementById('emptyState');
+
+    let filtered = allOrders;
+    if (currentTab !== 'all') {
+        filtered = filtered.filter(o => o.source === currentTab);
+    }
+
+    if (searchQuery) {
+        const q = searchQuery.toLowerCase().replace(/^#/, ''); // buang # biar user bisa cari #123456 atau 123456
+        filtered = filtered.filter(o => {
+            const shortId = String(o.id).slice(-6).toLowerCase();
+            const fullId = String(o.id).toLowerCase();
+            return (o.customerName || '').toLowerCase().includes(q) ||
+                shortId.includes(q) ||
+                fullId.includes(q) ||
+                (o.product || '').toLowerCase().includes(q) ||
+                (o.whatsapp || '').includes(q);
         });
+    }
 
-        detailModal.addEventListener('click', (e) => {
-            if (e.target === detailModal) {
-                detailModal.classList.remove('show');
-            }
+    if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.style.display = 'block';
+        return;
+    }
+
+    emptyState.style.display = 'none';
+
+    tbody.innerHTML = filtered.map(order => {
+        const status = order.status || 'new';
+        const statusConfig = {
+            new: { label: 'Baru', class: 'new', icon: 'fa-circle' },
+            process: { label: 'Diproses', class: 'process', icon: 'fa-clock' },
+            done: { label: 'Selesai', class: 'done', icon: 'fa-check' },
+            cancel: { label: 'Dibatalkan', class: 'cancel', icon: 'fa-times' }
+        };
+        const sc = statusConfig[status] || statusConfig.new;
+        const typeClass = order.source === 'laminating' ? 'laminating' : '';
+
+        return `
+            <tr>
+                <td><span class="order-id">${formatShortId(order.id)}</span></td>
+                <td>
+                    <div class="customer-name">${escapeHtml(order.customerName || '-')}</div>
+                    <div class="customer-phone">${escapeHtml(order.whatsapp || '-')}</div>
+                </td>
+                <td>
+                    <span class="product-tag ${typeClass}">${escapeHtml(order.product || '-')}</span>
+                </td>
+                <td>${order.quantity || 1}</td>
+                <td class="price">Rp ${formatRupiah(parseNumber(order.total))}</td>
+                <td>
+                    <span class="status-badge ${sc.class}">
+                        <i class="fas ${sc.icon}"></i> ${sc.label}
+                    </span>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="action-btn view" onclick="openDetail('${order.id}', '${order.source}')" title="Lihat Detail">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn wa" onclick="chatCustomer('${escapeHtml(order.whatsapp || '')}', '${order.id}')" title="Chat WhatsApp">
+                            <i class="fab fa-whatsapp"></i>
+                        </button>
+                        <button class="action-btn delete" onclick="deleteOrder('${order.id}', '${order.source}')" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// ========================================
+// TAB SWITCHING
+// ========================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        currentTab = this.dataset.tab;
+        renderOrders();
+    });
+});
+
+// ========================================
+// SEARCH
+// ========================================
+document.getElementById('searchInput').addEventListener('input', function (e) {
+    searchQuery = e.target.value.trim();
+    renderOrders();
+});
+
+// ========================================
+// DETAIL MODAL
+// ========================================
+const detailModal = document.getElementById('detailModal');
+const modalBody = document.getElementById('modalBody');
+const statusSelect = document.getElementById('statusSelect');
+
+function openDetail(orderId, source) {
+    const order = allOrders.find(o => String(o.id) === String(orderId) && o.source === source);
+    if (!order) return;
+
+    selectedOrder = order;
+    selectedOrderSource = source;
+    const status = order.status || 'new';
+
+    modalBody.innerHTML = `
+        <div class="detail-row">
+            <div class="detail-label">ID Pesanan</div>
+            <div class="detail-value">
+                <span class="order-id">${formatShortId(order.id)}</span>
+                <br><small style="color:#94a3b8;font-size:0.72rem;">Full ID: ${formatFullId(order.id)}</small>
+            </div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Jenis Layanan</div>
+            <div class="detail-value">${order.type}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Nama Pelanggan</div>
+            <div class="detail-value">${escapeHtml(order.customerName || '-')}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">No. WhatsApp</div>
+            <div class="detail-value">${escapeHtml(order.whatsapp || '-')}</div>
+        </div>
+        ${order.address ? `
+        <div class="detail-row">
+            <div class="detail-label">Alamat</div>
+            <div class="detail-value">${escapeHtml(order.address)}</div>
+        </div>` : ''}
+        <div class="detail-row">
+            <div class="detail-label">Produk</div>
+            <div class="detail-value">${escapeHtml(order.product || '-')}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Spesifikasi</div>
+            <div class="detail-value">${escapeHtml(order.desc || '-')}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Jumlah</div>
+            <div class="detail-value">${order.quantity || 1}</div>
+        </div>
+        ${order.size ? `
+        <div class="detail-row">
+            <div class="detail-label">Ukuran</div>
+            <div class="detail-value">${escapeHtml(order.size)}</div>
+        </div>` : ''}
+        <div class="detail-row">
+            <div class="detail-label">Catatan</div>
+            <div class="detail-value">${escapeHtml(order.notes || '-')}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Total</div>
+            <div class="detail-value price">Rp ${formatRupiah(parseNumber(order.total))}</div>
+        </div>
+        <div class="detail-row">
+            <div class="detail-label">Waktu Pesan</div>
+            <div class="detail-value">${formatDate(order.timestamp)}</div>
+        </div>
+    `;
+
+    statusSelect.value = status;
+    detailModal.classList.add('show');
+}
+
+document.getElementById('closeModal').addEventListener('click', () => {
+    detailModal.classList.remove('show');
+});
+
+detailModal.addEventListener('click', (e) => {
+    if (e.target === detailModal) {
+        detailModal.classList.remove('show');
+    }
+});
+
+statusSelect.addEventListener('change', function () {
+    if (!selectedOrder) return;
+
+    const newStatus = this.value;
+    updateOrderStatus(selectedOrder.id, selectedOrderSource, newStatus);
+    selectedOrder.status = newStatus;
+
+    showToast('Status berhasil diubah ke "' + newStatus + '"', 'success');
+    loadAllOrders();
+    updateStats();
+    renderOrders();
+});
+
+// ========================================
+// CHAT CUSTOMER — DENGAN ID PESANAN
+// ========================================
+document.getElementById('waCustomerBtn').addEventListener('click', function () {
+    if (!selectedOrder) return;
+    const phone = selectedOrder.whatsapp;
+    if (!phone) {
+        showToast('Nomor WhatsApp tidak tersedia', 'error');
+        return;
+    }
+    const shortId = formatShortId(selectedOrder.id);
+    const msg = `Halo ${selectedOrder.customerName}, terkait pesanan Anda ${shortId} (${selectedOrder.product}) sedang kami proses. Mohon ditunggu ya 🙏`;
+    window.open(`https://wa.me/${formatPhone(phone)}?text=${encodeURIComponent(msg)}`, '_blank');
+});
+
+// ========================================
+// CHAT DARI TABEL — DENGAN ID PESANAN
+// ========================================
+function chatCustomer(phone, orderId) {
+    if (!phone) {
+        showToast('Nomor WhatsApp tidak tersedia', 'error');
+        return;
+    }
+    const shortId = formatShortId(orderId);
+    const msg = `Halo, terkait pesanan Anda ${shortId} di Zoku TopUp. Ada yang bisa kami bantu?`;
+    window.open(`https://wa.me/${formatPhone(phone)}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+// ========================================
+// UPDATE / DELETE ORDER
+// ========================================
+function updateOrderStatus(orderId, source, newStatus) {
+    const key = STORAGE_KEYS[source];
+    if (!key) return;
+
+    try {
+        const orders = JSON.parse(localStorage.getItem(key)) || [];
+        const idx = orders.findIndex(o => String(o.id) === String(orderId));
+        if (idx !== -1) {
+            orders[idx].status = newStatus;
+            localStorage.setItem(key, JSON.stringify(orders));
+        }
+    } catch (e) {
+        console.error('Error updating order:', e);
+    }
+}
+
+function deleteOrder(orderId, source) {
+    const shortId = formatShortId(orderId);
+    if (!confirm(`Yakin ingin menghapus pesanan ${shortId}?`)) return;
+
+    const key = STORAGE_KEYS[source];
+    if (!key) return;
+
+    try {
+        let orders = JSON.parse(localStorage.getItem(key)) || [];
+        orders = orders.filter(o => String(o.id) !== String(orderId));
+        localStorage.setItem(key, JSON.stringify(orders));
+
+        showToast(`Pesanan ${shortId} berhasil dihapus`, 'success');
+        loadAllOrders();
+        updateStats();
+        renderOrders();
+    } catch (e) {
+        console.error('Error deleting order:', e);
+        showToast('Gagal menghapus pesanan', 'error');
+    }
+}
+
+// ========================================
+// UTILITY FUNCTIONS
+// ========================================
+function formatRupiah(amount) {
+    return new Intl.NumberFormat('id-ID').format(amount || 0);
+}
+
+function parseNumber(str) {
+    if (typeof str === 'number') return str;
+    if (!str) return 0;
+    const num = String(str).replace(/[^0-9]/g, '');
+    return parseInt(num) || 0;
+}
+
+function formatPhone(phone) {
+    let p = String(phone).replace(/[^0-9]/g, '');
+    if (p.startsWith('0')) {
+        p = '62' + p.slice(1);
+    } else if (p.startsWith('8')) {
+        p = '62' + p;
+    }
+    return p;
+}
+
+function formatDate(timestamp) {
+    if (!timestamp) return '-';
+    try {
+        const date = new Date(timestamp);
+        return date.toLocaleString('id-ID', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
         });
+    } catch (e) {
+        return '-';
+    }
+}
 
-        // Update status
-        statusSelect.addEventListener('change', function() {
-            if (!selectedOrder) return;
-            
-            const newStatus = this.value;
-            updateOrderStatus(selectedOrder.id, selectedOrderSource, newStatus);
-            selectedOrder.status = newStatus;
-            
-            showToast('Status berhasil diubah', 'success');
-            loadAllOrders();
-            updateStats();
-            renderOrders();
-        });
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
-        // Chat customer
-        document.getElementById('waCustomerBtn').addEventListener('click', function() {
-            if (!selectedOrder) return;
-            const phone = selectedOrder.whatsapp;
-            if (phone) {
-                const msg = `Halo ${selectedOrder.customerName}, pesanan Anda #${String(selectedOrder.id).slice(-6)} sedang kami proses.`;
-                window.open(`https://wa.me/${formatPhone(phone)}?text=${encodeURIComponent(msg)}`, '_blank');
-            }
-        });
+function showToast(message, type = 'success') {
+    const toast = document.getElementById('toast');
+    const toastText = document.getElementById('toastText');
+    const icon = toast.querySelector('i');
 
-        // ========================================
-        // UPDATE / DELETE ORDER
-        // ========================================
-        function updateOrderStatus(orderId, source, newStatus) {
-            const key = STORAGE_KEYS[source];
-            if (!key) return;
+    toastText.textContent = message;
+    toast.className = 'toast ' + type;
+    toast.classList.add('show');
 
-            try {
-                const orders = JSON.parse(localStorage.getItem(key)) || [];
-                const idx = orders.findIndex(o => String(o.id) === String(orderId));
-                if (idx !== -1) {
-                    orders[idx].status = newStatus;
-                    localStorage.setItem(key, JSON.stringify(orders));
-                }
-            } catch (e) {
-                console.error('Error updating order:', e);
-            }
-        }
+    if (type === 'success') {
+        icon.className = 'fas fa-check-circle';
+    } else if (type === 'error') {
+        icon.className = 'fas fa-exclamation-circle';
+    }
 
-        function deleteOrder(orderId, source) {
-            if (!confirm('Yakin ingin menghapus pesanan ini?')) return;
+    setTimeout(() => {
+        toast.classList.remove('show');
+    }, 3000);
+}
 
-            const key = STORAGE_KEYS[source];
-            if (!key) return;
+// ========================================
+// INIT
+// ========================================
+document.addEventListener('DOMContentLoaded', checkSession);
 
-            try {
-                let orders = JSON.parse(localStorage.getItem(key)) || [];
-                orders = orders.filter(o => String(o.id) !== String(orderId));
-                localStorage.setItem(key, JSON.stringify(orders));
-                
-                showToast('Pesanan berhasil dihapus', 'success');
-                loadAllOrders();
-                updateStats();
-                renderOrders();
-            } catch (e) {
-                console.error('Error deleting order:', e);
-                showToast('Gagal menghapus pesanan', 'error');
-            }
-        }
-
-        // Chat dari tabel
-        function chatCustomer(phone) {
-            if (!phone) {
-                showToast('Nomor WhatsApp tidak tersedia', 'error');
-                return;
-            }
-            window.open(`https://wa.me/${formatPhone(phone)}`, '_blank');
-        }
-
-        // ========================================
-        // UTILITY FUNCTIONS
-        // ========================================
-        function formatRupiah(amount) {
-            return new Intl.NumberFormat('id-ID').format(amount || 0);
-        }
-
-        function parseNumber(str) {
-            if (typeof str === 'number') return str;
-            if (!str) return 0;
-            // Hapus semua karakter non-digit
-            const num = String(str).replace(/[^0-9]/g, '');
-            return parseInt(num) || 0;
-        }
-
-        function formatPhone(phone) {
-            let p = String(phone).replace(/[^0-9]/g, '');
-            if (p.startsWith('0')) {
-                p = '62' + p.slice(1);
-            } else if (p.startsWith('8')) {
-                p = '62' + p;
-            }
-            return p;
-        }
-
-        function formatDate(timestamp) {
-            if (!timestamp) return '-';
-            try {
-                const date = new Date(timestamp);
-                return date.toLocaleString('id-ID', {
-                    day: '2-digit',
-                    month: 'short',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-            } catch (e) {
-                return '-';
-            }
-        }
-
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function showToast(message, type = 'success') {
-            const toast = document.getElementById('toast');
-            const toastText = document.getElementById('toastText');
-            const icon = toast.querySelector('i');
-            
-            toastText.textContent = message;
-            toast.className = 'toast ' + type;
-            toast.classList.add('show');
-            
-            if (type === 'success') {
-                icon.className = 'fas fa-check-circle';
-            } else if (type === 'error') {
-                icon.className = 'fas fa-exclamation-circle';
-            }
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
-        }
-
-        // ========================================
-        // INIT
-        // ========================================
-        document.addEventListener('DOMContentLoaded', checkSession);
-
-        // Refresh data saat window focus (jika ada tab lain yang buka)
-        window.addEventListener('focus', function() {
-            if (adminDashboard.classList.contains('show')) {
-                loadAllOrders();
-                updateStats();
-                renderOrders();
-            }
-        });
+window.addEventListener('focus', function () {
+    if (adminDashboard.classList.contains('show')) {
+        loadAllOrders();
+        updateStats();
+        renderOrders();
+    }
+});
     </script>
 </body>
 </html>
